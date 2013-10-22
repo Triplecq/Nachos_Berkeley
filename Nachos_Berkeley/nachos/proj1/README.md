@@ -41,20 +41,20 @@ complete skeleton for the project. Also, there should be no busy-waiting in any 
 
 
 
-Tasks:
+<b>Tasks:</b>
 
-(5%, 5 lines) Implement KThread.join(). 
+<b>(5%, 5 lines) Implement KThread.join().</b> 
 Note that another thread does not have to call join(), but if it is called, it must be called only once. 
 The result of calling join() a second time on the same thread is undefined, even if the second caller is a 
 different thread than the first caller. A thread must finish executing normally whether or not it is joined.
 
-(5%, 20 lines) Implement condition variables directly, by using interrupt enable and disable to provide atomicity. 
+<b>(5%, 20 lines) Implement condition variables directly, by using interrupt enable and disable to provide atomicity.</b>
 We have provided a sample implementation that uses semaphores; your job is to provide an equivalent implementation 
 without directly using semaphores (you may of course still use locks, even though they indirectly use semaphores). 
 Once you are done, you will have two alternative implementations that provide the exact same functionality. 
 Your second implementation of condition variables must reside in class nachos.threads.Condition2.
 
-(10%, 40 lines) Complete the implementation of the Alarm class, by implementing the waitUntil(long x) method. 
+<b>(10%, 40 lines) Complete the implementation of the Alarm class, by implementing the waitUntil(long x) method.</b> 
 A thread calls waitUntil to suspend its own execution until time has advanced to at least now + x. 
 This is useful for threads that operate in real-time, for example, for blinking the cursor once per second. 
 There is no requirement that threads start running immediately after waking up; just put them on the ready queue in 
@@ -63,19 +63,18 @@ Do not fork any additional threads to implement waitUntil(); you need only modif
 interrupt handler. waitUntil is not limited to one thread; any number of threads may call it and be suspended 
 at any one time.
 
-(20%, 40 lines) Implement synchronous send and receive of one word messages (also known as Ada-style rendezvous), 
-using condition variables (don't use semaphores!). Implement the Communicator class with operations, 
-void speak(int word) and int listen().
-speak() atomically waits until listen() is called on the same Communicator object, and then transfers the word 
-over to listen(). Once the transfer is made, both can return. Similarly, listen() waits until speak() is called, 
-at which point the transfer is made, and both can return (listen() returns the word). This means that 
-neither thread may return from listen() or speak() until the word transfer has been made. Your solution should 
-work even if there are multiple speakers and listeners for the same Communicator 
+<b>(20%, 40 lines) Implement synchronous send and receive of one word messages (also known as Ada-style rendezvous), 
+using condition variables (don't use semaphores!).</b> Implement the Communicator class with operations, 
+void speak(int word) and int listen().speak() atomically waits until listen() is called on the same Communicator object,
+and then transfers the word over to listen(). Once the transfer is made, both can return. Similarly, listen() waits 
+until speak() is called, at which point the transfer is made, and both can return (listen() returns the word). 
+This means that neither thread may return from listen() or speak() until the word transfer has been made. 
+Your solution should work even if there are multiple speakers and listeners for the same Communicator 
 (note: this is equivalent to a zero-length bounded buffer; since the buffer has no room, the producer and 
 consumer must interact directly, requiring that they wait for one another). Each communicator should only use 
 exactly one lock. If you're using more than one lock, you're making things too complicated.
 
-(35%, 125 lines) Implement priority scheduling in Nachos by completing the PriorityScheduler class. 
+<b>(35%, 125 lines) Implement priority scheduling in Nachos by completing the PriorityScheduler class.</b> 
 Priority scheduling is a key building block in real-time systems. Note that in order to use your priority scheduler, 
 you will need to change a line in nachos.conf that specifies the scheduler class to use. The ThreadedKernel.scheduler 
 key is initially equal to nachos.threads.RoundRobinScheduler. You need to change this to nachos.threads. 
@@ -117,7 +116,7 @@ Priority Donation Implementation Details:
     2) Priority donation is transitive. If thread A donates to thread B and then thread B donates to thread C, 
     thread B will be donating its new effective priority (which it received from thread A) to thread C.
 
-(25%, 150 lines) Now that you have all of these synchronization devices, use them to solve this problem. 
+<b>(25%, 150 lines) Now that you have all of these synchronization devices, use them to solve this problem.</b> 
 You will find condition variables to be the most useful synchronization method for this problem.
 A number of Hawaiian adults and children are trying to get from Oahu to Molokai. Unfortunately, they have only 
 one boat which can carry maximally two children or one adult (but not one child and one adult). The boat can be 
@@ -165,11 +164,12 @@ are incorrect. Your simulation must handle this case without requiring explict o
 begin() (the parent thread) to the adult/child threads.
 
 
-Design Questions:
+<b>Design Questions:</b>
 
-Please answer the following questions in your final design document (due one day after the code for this phase is due).
+Please answer the following questions in your final design document.
 
 Why is it fortunate that we did not ask you to implement priority donation for semaphores?
-A student proposes to solve the boats problem by use of a counter, AdultsOnOahu. Since this number isn't 
-known initially, it will be started at zero, and incremented by each adult thread before they do anything else. 
+
+A student proposes to solve the boats problem by use of a counter, AdultsOnOahu. Since this number isn't known 
+initially, it will be started at zero, and incremented by each adult thread before they do anything else. 
 Is this solution likely to work? Why or why not?
