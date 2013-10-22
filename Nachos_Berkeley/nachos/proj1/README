@@ -6,10 +6,11 @@ The first step is to read and understand the partial thread system we have writt
 
 After installing the Nachos distribution, run the program nachos (in the proj1 subdirectory) for a simple test of our code. This causes the methods of nachos.threads.ThreadedKernel to be called in the order listed in threads/ThreadedKernel.java:
 
-The ThreadedKernel constructor is invoked to create the Nachos kernel.
-This kernel is initialized with initialize().
-This kernel is tested with selfTest().
-This kernel is finally "run" with run(). For now, run() does nothing, since our kernel is not yet able to run user programs.
+    The ThreadedKernel constructor is invoked to create the Nachos kernel.
+    This kernel is initialized with initialize().
+    This kernel is tested with selfTest().
+    This kernel is finally "run" with run(). For now, run() does nothing, since our kernel is not yet able to run user programs.
+
 Trace the execution path (by hand) for the simple test cases we provide. When you trace the execution path, it is helpful to keep track of the state of each thread and which procedures are on each thread's execution stack. You will notice that when one thread calls TCB.contextSwitch(), that thread stops executing, and another thread starts running. The first thing the new thread does is to return from TCB.contextSwitch(). We realize this comment will seem cryptic to you at this point, but you will understand threads once you understand why the TCB.contextSwitch() that gets called is different from the TCB.contextSwitch() that returns.
 
 Properly synchronized code should work no matter what order the scheduler chooses to run the threads on the ready list. In other words, we should be able to put a call to KThread.yield() (causing the scheduler to choose another thread to run) anywhere in your code where interrupts are enabled, and your code should still be correct. You will be asked to write properly synchronized code as part of the later assignments, so understanding how to do this is crucial to being able to do the project.
