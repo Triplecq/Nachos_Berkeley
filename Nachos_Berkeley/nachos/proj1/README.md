@@ -1,4 +1,4 @@
-Phase 1: Build a thread system
+<b><h3>Phase 1: Build a thread system</h3></b>
 
 
 Stock Nachos has an incomplete thread system. In this assignment, your job is to complete it, and then 
