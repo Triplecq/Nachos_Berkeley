@@ -287,6 +287,18 @@ public class KThread {
 
 		Lib.assertTrue(this != currentThread);
 
+		// ----triplecq----
+		boolean intStatus = Machine.interrupt().disable();
+		if (this.status != statusFinished) {
+			// enable priority
+			ThreadQueue waitQueue = ThreadedKernel.scheduler
+					.newThreadQueue(true);
+			waitQueue.acquire(this);// give this access
+			waitQueue.waitForAccess(currentThread);
+			while (this.status != statusFinished)
+				KThread.yield();
+		}
+		Machine.interrupt().restore(intStatus);
 	}
 
 	/**
@@ -418,6 +430,31 @@ public class KThread {
 
 		new KThread(new PingTest(1)).setName("forked thread").fork();
 		new PingTest(0).run();
+
+		// ----triplecq----
+		// test join()
+		KThread t1 = new KThread(new Runnable() {
+			public void run() {
+				System.out.println("is going to make t2");
+
+				KThread t2 = new KThread(new Runnable() {
+					public void run() {
+						System.out.println("Inside t2");
+					}
+				});
+
+				System.out.println("t2 is going to fork");
+				t2.fork();
+				System.out.println("t2 forked");
+				t2.join();
+				System.out.println("t2 joined");
+			}
+		});
+		System.out.println("t1 is going to fork");
+		t1.fork();
+		System.out.println("t1 forked");
+		t1.join();
+		System.out.println("t1 joined");
 	}
 
 	private static final char dbgThread = 't';
