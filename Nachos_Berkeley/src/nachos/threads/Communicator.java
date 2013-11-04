@@ -104,6 +104,31 @@ public class Communicator {
 		return word;
 	}
 
+	public static void selfTest() {
+		final Communicator comm = new Communicator();
+
+		KThread thread1 = new KThread(new Runnable() {
+			public void run() {
+				System.out.println("Thread1 is going to listening");
+				comm.listen();
+				System.out.println("Thread1 finished listening");
+			}
+		});
+
+		KThread thread2 = new KThread(new Runnable() {
+			public void run() {
+				System.out.println("Thread2 is going to speaking");
+				comm.speak(5);
+				System.out.println("Thread2 finished speaking");
+			}
+		});
+
+		thread1.fork();
+		thread2.fork();
+		thread1.join();
+		thread2.join();
+	}
+
 	private Lock lock;
 	/**
 	 * queue of speakers that are waiting for listeners
