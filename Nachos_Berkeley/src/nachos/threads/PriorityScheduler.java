@@ -1,10 +1,10 @@
 package nachos.threads;
 
-import nachos.machine.*;
-
-import java.util.TreeSet;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+
+import nachos.machine.Lib;
+import nachos.machine.Machine;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -143,8 +143,10 @@ public class PriorityScheduler extends Scheduler {
 
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// implement me
-			return null;
+			// ----triplecq----
+			if (waitQueue.isEmpty())
+				return null;
+			return (KThread) waitQueue.removeFirst();
 		}
 
 		/**
@@ -154,13 +156,16 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the next thread that <tt>nextThread()</tt> would return.
 		 */
 		protected ThreadState pickNextThread() {
-			// implement me
+			// ----triplecq----
+			nextThread();
 			return null;
 		}
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// implement me (if you want)
+			// ----triplecq----
+			for (Iterator i = waitQueue.iterator(); i.hasNext();)
+				System.out.println((KThread) i.next() + " ");
 		}
 
 		/**
@@ -168,6 +173,8 @@ public class PriorityScheduler extends Scheduler {
 		 * threads to the owning thread.
 		 */
 		public boolean transferPriority;
+
+		protected LinkedList<KThread> waitQueue = new LinkedList<KThread>();
 	}
 
 	/**
@@ -238,7 +245,8 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#waitForAccess
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
-			// implement me
+			// ----triplecq----
+
 		}
 
 		/**
@@ -259,5 +267,6 @@ public class PriorityScheduler extends Scheduler {
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
+		protected long age = Machine.timer().getTime();
 	}
 }
