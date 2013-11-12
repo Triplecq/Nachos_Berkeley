@@ -143,10 +143,11 @@ public class PriorityScheduler extends Scheduler {
 
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// ----triplecq----
-			if (waitQueue.isEmpty())
-				return null;
-			return (KThread) waitQueue.removeFirst();
+			ThreadState threadState = this.pickNextThread();
+			if (threadState != null) {
+
+			}
+			return threadState.thread;
 		}
 
 		/**
@@ -156,15 +157,17 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the next thread that <tt>nextThread()</tt> would return.
 		 */
 		protected ThreadState pickNextThread() {
-			// ----triplecq----
-			nextThread();
-			return null;
+			boolean intStatus = Machine.interrupt().disable();
+			// ensure the priorityQueue is ordered
+			this.priorityQueue = new LinkedList<ThreadState>(priorityQueue);
+			Machine.interrupt().restore(intStatus);
+			return this.priorityQueue.peek();
 		}
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// ----triplecq----
-			for (Iterator i = waitQueue.iterator(); i.hasNext();)
+			for (Iterator i = priorityQueue.iterator(); i.hasNext();)
 				System.out.println((KThread) i.next() + " ");
 		}
 
@@ -174,7 +177,11 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public boolean transferPriority;
 
-		protected LinkedList<KThread> waitQueue = new LinkedList<KThread>();
+		// base priority queue object
+		protected LinkedList<ThreadState> priorityQueue = new LinkedList<ThreadState>();
+
+		// most recently dequeued ThreadState
+		protected ThreadState dequeuedThread = null;
 	}
 
 	/**
@@ -184,7 +191,7 @@ public class PriorityScheduler extends Scheduler {
 	 * 
 	 * @see nachos.threads.KThread#schedulingState
 	 */
-	protected class ThreadState {
+	protected class ThreadState implements Comparable<ThreadState> {
 		/**
 		 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 		 * specified thread.
@@ -205,6 +212,14 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getPriority() {
 			return priority;
+		}
+
+		/**
+		 * Calculate the effective priority of the thread and the thread which
+		 * current holds the resources it's waiting on
+		 */
+		public void calEffectivePriority() {
+
 		}
 
 		/**
@@ -246,7 +261,11 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// ----triplecq----
-
+			Lib.assertTrue(Machine.interrupt().disabled());
+			long time = Machine.timer().getTime();
+			this.age = time;
+			waitQueue.priorityQueue.add(this);
+			this.calEffectivePriority();
 		}
 
 		/**
@@ -263,10 +282,25 @@ public class PriorityScheduler extends Scheduler {
 			// implement me
 		}
 
+		public int compareTo(ThreadState threadState) {
+			if (threadState == null)
+				return -1;
+			if (this.getEffectivePriority() < threadState
+					.getEffectivePriority() || this.age >= threadState.age)
+				return 1;
+			else
+				return -1;
+
+		}
+
 		/** The thread with which this object is associated. */
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
+		// the age of the thread state relative to Nachos time
 		protected long age = Machine.timer().getTime();
+		protected int effectivePriority;
+		protected LinkedList<PriorityQueue> onQueues;
+		protected PriorityQueue waiting;
 	}
 }
