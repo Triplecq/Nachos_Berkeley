@@ -141,11 +141,25 @@ public class PriorityScheduler extends Scheduler {
 			getThreadState(thread).acquire(this);
 		}
 
+		/**
+		 * Remove highest priority thread from the queue. Once it is removed
+		 * calculate its effective priority.
+		 * 
+		 * @return HighestPriority KThread
+		 */
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			ThreadState threadState = this.pickNextThread();
-			if (threadState != null) {
-
+			priorityQueue.remove(threadState);
+			if (transferPriority && threadState != null) {
+				this.dequeuedThread.removeQueue(this);
+				threadState.waiting = null;
+				threadState.addQueue(this);
+			}
+			this.dequeuedThread = threadState;
+			if (threadState == null) {
+				this.priorityQueue = new LinkedList<ThreadState>();
+				return null;
 			}
 			return threadState.thread;
 		}
@@ -202,7 +216,11 @@ public class PriorityScheduler extends Scheduler {
 		public ThreadState(KThread thread) {
 			this.thread = thread;
 
-			setPriority(priorityDefault);
+			// initialize the onQueue
+			this.onQueues = new LinkedList<PriorityQueue>();
+			this.age = Machine.timer().getTime();
+			this.effectivePriority = priorityDefault;
+			this.waiting = null;
 		}
 
 		/**
@@ -219,7 +237,28 @@ public class PriorityScheduler extends Scheduler {
 		 * current holds the resources it's waiting on
 		 */
 		public void calEffectivePriority() {
+			int initPriority = this.getPriority();
+			int maxEP = -1;
+			if (onQueues.size() != 0) {
+				int size = onQueues.size();
+				for (int i = 0; i < size; i++) {
+					PriorityQueue current = onQueues.get(i);
+					ThreadState donator = current.pickNextThread();
+					if (donator != null) {
+						if (donator.getEffectivePriority() > maxEP
+								&& current.transferPriority)
+							maxEP = donator.getEffectivePriority();
+					}
+				}
+			}
+			if (initPriority > maxEP)
+				maxEP = initPriority;
+			this.effectivePriority = maxEP;
 
+			// recalculate the thread which this one is waiting on
+			if (this.waiting != null && this.waiting.dequeuedThread != null)
+				if (this.effectivePriority != this.waiting.dequeuedThread.effectivePriority)
+					this.waiting.dequeuedThread.calEffectivePriority();
 		}
 
 		/**
@@ -228,8 +267,7 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the effective priority of the associated thread.
 		 */
 		public int getEffectivePriority() {
-			// implement me
-			return priority;
+			return this.effectivePriority;
 		}
 
 		/**
@@ -243,8 +281,9 @@ public class PriorityScheduler extends Scheduler {
 				return;
 
 			this.priority = priority;
-
-			// implement me
+			this.calEffectivePriority();
+			if (this.waiting != null && this.waiting.dequeuedThread != null)
+				this.waiting.dequeuedThread.calEffectivePriority();
 		}
 
 		/**
@@ -260,7 +299,6 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#waitForAccess
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
-			// ----triplecq----
 			Lib.assertTrue(Machine.interrupt().disabled());
 			long time = Machine.timer().getTime();
 			this.age = time;
@@ -279,7 +317,21 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-			// implement me
+			Lib.assertTrue(Machine.interrupt().disable());
+			Lib.assertTrue(waitQueue.priorityQueue.isEmpty());
+			waitQueue.dequeuedThread = this;
+			this.addQueue(waitQueue);
+			this.calEffectivePriority();
+		}
+
+		public void addQueue(PriorityQueue waitQueue) {
+			onQueues.add(waitQueue);
+			this.calEffectivePriority();
+		}
+
+		public void removeQueue(PriorityQueue waitQueue) {
+			onQueues.remove();
+			this.calEffectivePriority();
 		}
 
 		public int compareTo(ThreadState threadState) {
@@ -290,7 +342,12 @@ public class PriorityScheduler extends Scheduler {
 				return 1;
 			else
 				return -1;
+		}
 
+		public String toString() {
+			return "ThreadState thread = " + thread + ", priority = "
+					+ getPriority() + ", effective priority = "
+					+ getEffectivePriority();
 		}
 
 		/** The thread with which this object is associated. */
