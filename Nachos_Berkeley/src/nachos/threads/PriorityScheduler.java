@@ -317,7 +317,7 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-			Lib.assertTrue(Machine.interrupt().disable());
+			//Lib.assertTrue(Machine.interrupt().disable());
 			Lib.assertTrue(waitQueue.priorityQueue.isEmpty());
 			waitQueue.dequeuedThread = this;
 			this.addQueue(waitQueue);
