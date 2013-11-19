@@ -155,6 +155,39 @@ public class PriorityScheduler extends Scheduler {
 		System.out.println("PriorityScheduler-thread4 EP="
 				+ ps.getThreadState(thread4).getEffectivePriority());
 
+		ps.getThreadState(thread2).setPriority(3);
+		System.out.println("\nAfter setting thread2's EP = 3");
+		System.out.println("PriorityScheduler-thread1 EP="
+				+ ps.getThreadState(thread1).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread2 EP="
+				+ ps.getThreadState(thread2).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread4 EP="
+				+ ps.getThreadState(thread4).getEffectivePriority());
+
+		queue1.waitForAccess(thread3);
+		ps.getThreadState(thread3).setPriority(5);
+
+		System.out.println("\nAfter setting thread3's EP = 5");
+		System.out.println("PriorityScheduler-thread1 EP="
+				+ ps.getThreadState(thread1).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread2 EP="
+				+ ps.getThreadState(thread2).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread3 EP="
+				+ ps.getThreadState(thread3).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread4 EP="
+				+ ps.getThreadState(thread4).getEffectivePriority());
+
+		ps.getThreadState(thread3).setPriority(2);
+		System.out.println("\nAfter setting thread3's EP = 2");
+		System.out.println("PriorityScheduler-thread1 EP="
+				+ ps.getThreadState(thread1).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread2 EP="
+				+ ps.getThreadState(thread2).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread3 EP="
+				+ ps.getThreadState(thread3).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread4 EP="
+				+ ps.getThreadState(thread4).getEffectivePriority());
+
 		Machine.interrupt().restore(intStatus);
 
 		System.out
@@ -391,7 +424,7 @@ public class PriorityScheduler extends Scheduler {
 		/** The thread with which this object is associated. */
 		protected KThread thread;
 		/** The priority of the associated thread. */
-		protected int priority;
+		protected int priority = priorityDefault;
 		// the age of the thread state relative to Nachos time
 		protected long age = Machine.timer().getTime();
 		protected int effectivePriority;
