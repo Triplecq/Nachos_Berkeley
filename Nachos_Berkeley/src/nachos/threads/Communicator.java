@@ -105,6 +105,8 @@ public class Communicator {
 	}
 
 	public static void selfTest() {
+		System.out.println("---------Communicator Test---------");
+
 		final Communicator comm = new Communicator();
 
 		KThread thread1 = new KThread(new Runnable() {
@@ -127,6 +129,8 @@ public class Communicator {
 		thread2.fork();
 		thread1.join();
 		thread2.join();
+
+		System.out.println("---------End Communicator Test---------" + "\n");
 	}
 
 	private Lock lock;

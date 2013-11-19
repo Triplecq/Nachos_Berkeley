@@ -431,8 +431,11 @@ public class KThread {
 		new KThread(new PingTest(1)).setName("forked thread").fork();
 		new PingTest(0).run();
 
-		// ----triplecq----
-		// test join()
+		KThread.joinSelfTest();
+	}
+
+	public static void joinSelfTest() {
+		System.out.println("---------join() Test---------");
 		KThread t1 = new KThread(new Runnable() {
 			public void run() {
 				System.out.println("is going to make t2");
@@ -455,6 +458,7 @@ public class KThread {
 		System.out.println("t1 forked");
 		t1.join();
 		System.out.println("t1 joined");
+		System.out.println("---------End join() Test---------" + "\n");
 	}
 
 	private static final char dbgThread = 't';

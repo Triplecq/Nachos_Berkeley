@@ -123,6 +123,44 @@ public class PriorityScheduler extends Scheduler {
 		return (ThreadState) thread.schedulingState;
 	}
 
+	public static void selfTest() {
+		System.out.println("---------PriorityScheduler Test---------");
+		PriorityScheduler ps = new PriorityScheduler();
+		ThreadQueue queue1 = ps.newThreadQueue(true);
+		ThreadQueue queue2 = ps.newThreadQueue(true);
+		ThreadQueue queue3 = ps.newThreadQueue(true);
+
+		KThread thread1 = new KThread();
+		KThread thread2 = new KThread();
+		KThread thread3 = new KThread();
+		KThread thread4 = new KThread();
+		KThread thread5 = new KThread();
+		thread1.setName("PriorityScheduler-thread1");
+		thread2.setName("PriorityScheduler-thread1");
+		thread3.setName("PriorityScheduler-thread1");
+		thread4.setName("PriorityScheduler-thread1");
+		thread5.setName("PriorityScheduler-thread1");
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		queue3.acquire(thread1);
+		queue1.acquire(thread1);
+		queue1.waitForAccess(thread2);
+		queue2.acquire(thread4);
+		queue2.waitForAccess(thread1);
+		System.out.println("PriorityScheduler-thread1 EP="
+				+ ps.getThreadState(thread1).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread2 EP="
+				+ ps.getThreadState(thread2).getEffectivePriority());
+		System.out.println("PriorityScheduler-thread4 EP="
+				+ ps.getThreadState(thread4).getEffectivePriority());
+
+		Machine.interrupt().restore(intStatus);
+
+		System.out
+				.println("---------End PriorityScheuler Test---------" + "\n");
+	}
+
 	/**
 	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
 	 */
@@ -317,7 +355,7 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-			//Lib.assertTrue(Machine.interrupt().disable());
+			// Lib.assertTrue(Machine.interrupt().disable());
 			Lib.assertTrue(waitQueue.priorityQueue.isEmpty());
 			waitQueue.dequeuedThread = this;
 			this.addQueue(waitQueue);
