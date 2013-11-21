@@ -374,6 +374,7 @@ public class PriorityScheduler extends Scheduler {
 			long time = Machine.timer().getTime();
 			this.age = time;
 			waitQueue.priorityQueue.add(this);
+			this.waiting = waitQueue;
 			this.calEffectivePriority();
 		}
 
