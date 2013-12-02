@@ -121,6 +121,21 @@ public class Boat {
 		 * bg.AdultRowToMolokai(); indicates that an adult has rowed the boat
 		 * across to Molokai
 		 */
+		lck.acquire();
+		reportedAdultsOnOahu++; // first time running this thread
+		while (adultCase() == 0) {
+			// case 0: no boat, or no child on Molokai, or a child is on boat
+			if (boatLocation.equals("Oahu")) {
+				childrenWaitingOnOahu.wake();
+			} else {
+				childrenWaitingOnMolokai.wake();
+			}
+			adultsWaitingOnOahu.sleep();
+		}
+		// case = 1
+		adultRun(boatLocation); // run, update stuffs
+		childrenWaitingOnMolokai.wake(); // attemp to wake up a child on Molokai
+		lck.release();
 	}
 
 	static void ChildItinerary() {
@@ -137,6 +152,51 @@ public class Boat {
 		bg.ChildRideToMolokai();
 		bg.AdultRideToMolokai();
 		bg.ChildRideToMolokai();
+	}
+
+	/**
+	 * Prerequisite: adult is on Oahu AND there are at least one child on
+	 * Molokai
+	 * 
+	 * @param location
+	 */
+	public static void adultRun(String location) {
+		if (location.equals("Oahu")) {
+			// still on Oahu
+			reportedAdultsOnOahu--;
+			lastReportedAdultsOnOahu = reportedAdultsOnOahu;
+			lastReportedChildrenOnOahu = reportedChildrenOnOahu;
+
+			bg.AdultRowToMolokai();
+
+			// now on Molokai
+			reportedAdultsOnMolokai++;
+			boatLocation = "Molokai";
+			KThread.currentThread().setName("Adult Thread on Molokai");
+
+		} else {
+			System.out
+					.println("Adult should never leave Molokai. Error in adultCase");
+		}
+	}
+
+	public static int adultCase() {
+		if (boatLocation.equals("Oahu")) {
+			if (KThread.currentThread().getName()
+					.equals("Adult Thread on Oahu")
+					&& lastReportedChildrenOnMolokai > 0 && !someOneWaiting) {
+				// boat on Oahu, adult on Oahu, 1+ child on Molokai, no child on
+				// boat => good to go
+				return 1;
+			} else {
+				// boat on Oahu, but adult NOT on Oahu or no children on Molokai
+				// => wait
+				return 0;
+			}
+		} else {
+			// boat is on Molokai => Adult never leaves Molokai
+			return 0;
+		}
 	}
 
 	/**
