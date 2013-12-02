@@ -139,6 +139,59 @@ public class Boat {
 	}
 
 	static void ChildItinerary() {
+		lck.acquire();
+		reportedChildrenOnOahu++;
+		while (!done) {
+			// Case 0: No boat
+			while (childCase() == 0) {
+				if (boatLocation.equals("Oahu")) {
+					childrenWaitingOnOahu.wake(); // tell whoever that have
+													// acess to the boat to wake
+													// up
+					childrenWaitingOnMolokai.sleep();
+				} else {
+					childrenWaitingOnMolokai.wake(); // tell whoever that have
+														// acess to the boat to
+														// wake up
+					childrenWaitingOnOahu.sleep();
+				}
+				adultsWaitingOnOahu.wake(); // wake up adult
+			}
+			// Case 1: boat ready, boat not full
+			if (!done) {
+				childRun(boatLocation); // run, update stuffs
+				if (maybeFinished()) { // could be fake
+					boatProblem.wake();
+					adultsWaitingOnOahu.wake();
+					childrenWaitingOnMolokai.sleep();
+				} else {
+					if (tryToGetOnBoat) {
+						childrenWaitingOnOahu.wake();
+						tryToGetOnBoat = false;
+						onBoat = true;
+						waitingOnBoat.sleep();
+					} else {
+						if (boatLocation.equals("Oahu")) {
+							childrenWaitingOnOahu.wake();
+							adultsWaitingOnOahu.wake();
+							childrenWaitingOnOahu.sleep();
+						} else {
+							if (onBoat) {
+								waitingOnBoat.wake();
+								onBoat = false;
+							}
+							childrenWaitingOnMolokai.wake(); // wake up other
+																// threads
+							adultsWaitingOnOahu.wake();
+							childrenWaitingOnMolokai.sleep(); // wait for
+																// possible
+																// future calls
+						}
+					}
+				}
+			}
+		}
+		lck.release();
 	}
 
 	static void SampleItinerary() {
@@ -180,6 +233,64 @@ public class Boat {
 		}
 	}
 
+	/**
+	 * Prerequisite: child and boat is on the same island, boat is not full
+	 * 
+	 * @param location
+	 */
+	public static void childRun(String location) {
+		if (location.equals("Oahu")) {
+			if (!someOneWaiting) { // No one waiting, this is first child
+				// Still on Oahu
+				reportedChildrenOnOahu--;
+				lastReportedChildrenOnOahu = reportedChildrenOnOahu;
+				lastReportedAdultsOnOahu = reportedAdultsOnOahu;
+
+				bg.ChildRowToMolokai(); // as pilot
+
+				// Not yet on Molokai! Waiting for a second child
+				KThread.currentThread().setName("Child Thread on Boat");
+				someOneWaiting = true; // a child should never go alone from
+										// Oahu to Molokai
+				tryToGetOnBoat = true;
+				waitingChild.add(KThread.currentThread());
+
+			} else { // First child has been waiting
+
+				// still on Oahu
+				reportedChildrenOnOahu--;
+				lastReportedChildrenOnOahu = reportedChildrenOnOahu;
+				lastReportedAdultsOnOahu = reportedAdultsOnOahu;
+
+				bg.ChildRideToMolokai(); // as passenger to Molokai
+
+				// Now both children are on Molokai
+				boatLocation = "Molokai";
+				KThread.currentThread().setName("Child Thread on Molokai");
+				KThread firstChild = waitingChild.removeFirst();
+				firstChild.setName("Child Thread on Molokai");
+				reportedChildrenOnMolokai = reportedChildrenOnMolokai + 2; // update
+																			// for
+																			// both
+																			// children
+				someOneWaiting = false;
+			}
+		} else {
+			// location == Molokai; only take 1 child back to Oahu
+			// still on Molokai
+			reportedChildrenOnMolokai--;
+			lastReportedChildrenOnMolokai = reportedChildrenOnMolokai;
+			lastReportedAdultsOnMolokai = reportedAdultsOnMolokai;
+
+			bg.ChildRowToOahu(); // pilot to Oahu
+
+			// Now on Oahu
+			reportedChildrenOnOahu++;
+			KThread.currentThread().setName("Child Thread on Oahu");
+			boatLocation = "Oahu";
+		}
+	}
+
 	public static int adultCase() {
 		if (boatLocation.equals("Oahu")) {
 			if (KThread.currentThread().getName()
@@ -199,6 +310,35 @@ public class Boat {
 		}
 	}
 
+	// return 1 => Go
+	// return 0 => wait
+	public static int childCase() {
+		if (boatLocation.equals("Oahu")) {
+			if (KThread.currentThread().getName()
+					.equals("Child Thread on Oahu")
+					&& waitingChild.size() < 2) {
+				// boat on Oahu, child on Oahu, boat is not full => Good to go
+				return 1;
+			} else {
+				// Child is on the other bank or boat is full => can't get on
+				// boat => wait
+				return 0;
+			}
+		} else {
+			// boat is on Molokai
+			if (KThread.currentThread().getName()
+					.equals("Child Thread on Molokai")) {
+				// Child is on Molokai
+				// If a child thread can get to this point, the process is not
+				// yet finished.
+				return 1;
+			} else {
+				// child not on Molokai
+				return 0;
+			}
+		}
+	}
+
 	/**
 	 * Prerequisite: Only called by begin
 	 * 
@@ -210,6 +350,20 @@ public class Boat {
 		if (boatLocation.equals("Molokai")
 				&& reportedAdultsOnMolokai == totalAdults
 				&& reportedChildrenOnMolokai == totalChildren) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Prerequisite: Child calling this method is on the same island as boat
+	 * 
+	 * @return
+	 */
+	public static boolean maybeFinished() {
+		if (boatLocation.equals("Molokai") && lastReportedAdultsOnOahu == 0
+				&& lastReportedChildrenOnOahu == 0) {
 			return true;
 		} else {
 			return false;
